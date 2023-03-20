@@ -1,5 +1,8 @@
 #include "mgsockets.h"
 
+std::mutex Server::VICTORIA;
+
+
 Engine::Engine(uint16_t _xport) {
      PORT = make_shared<uint16_t>(_xport);
 }
@@ -65,7 +68,6 @@ int Engine::setPort(uint16_t xPort) {
 
 int Engine::setHeapLimit(int _max) {
      try {
-          std::cout << std::flush;
           if (heap_limit == nullptr) {
                heap_limit = make_shared<int>(std::move(_max));
           } 
@@ -100,7 +102,6 @@ int Engine::getHeapLimit() {
 }
 
 
-
 int Engine::getPort() {
      try {
           if (*PORT == 0)  {
@@ -120,7 +121,6 @@ int Engine::getPort() {
 
 int Engine::setBuffer(int _tamx) {
      try {
-          std::cout << std::flush;
           if (buffer_size == nullptr) {
                buffer_size = make_shared<int>(std::move(_tamx));
           }
@@ -150,9 +150,6 @@ void Server::setSessions(int max) {
      }
 }
 
-
-
-
 int Server::on(function<void(string*)>optional) {
      try {
           if (setsockopt(*socket_id,
@@ -180,7 +177,7 @@ int Server::on(function<void(string*)>optional) {
                           (socklen_t *)&address_len))) < 0) {
                throw std::range_error("error al conectar el servidor");
           }
-          getResponseProcessing();
+               getResponseProcessing();
           optional(buffereOd_data.get());
 
           return MG_OK;
@@ -194,27 +191,26 @@ int Server::on(function<void(string*)>optional) {
 
 
 void Server::getResponseProcessing() {
-     try {
+
+     try {    
           string receptor{""};
           vector<char> buffer = {'1'};
+     
           buffer.reserve(*buffer_size);
-          read(*new_socket, buffer.data(), *buffer_size);
           
-          std::cout << std::flush;
+          read(*new_socket, buffer.data(), *buffer_size);
+     
           for (int it = 0; it <= *buffer_size-(*heap_limit); it++) {
                if (int(buffer[it] == UnCATCH_ERROR_CH))
                     continue;
                receptor += buffer[it];
           }
-          if(receptor.empty()) throw std::range_error("error, el mensaje no se recibio");
+           if(receptor.empty()) throw std::range_error("error, el mensaje no se recibio");
           buffereOd_data = make_shared<string>(receptor);
-          fflush(stdin);
-          fflush(stdout);
      }
      catch (const std::exception &e) {
           std::cerr << e.what() << '\n';
      }
-         
 }
 
 
@@ -230,12 +226,12 @@ void Server::sendResponse(string _msg) {
 }
 
 void Client::getResponseProcessing() {
+     
           string receptor{""};
           vector<char> buffer = {'1'};
           buffer.reserve(*buffer_size);
           read(*socket_id, buffer.data(), *buffer_size);
 
-          std::cout << std::flush;
           for (int it = 0; it <= *buffer_size - (*heap_limit); it++) {
                if (int(buffer[it] == UnCATCH_ERROR_CH))
                     continue;
@@ -244,7 +240,6 @@ void Client::getResponseProcessing() {
           if(receptor.empty()) throw std::range_error("error, el mensaje no se recibio");
           buffereOd_data = make_shared<string>(receptor);
 }
-
 
 int Client::on(function<void(string*)>optional) {
      try {
@@ -282,7 +277,6 @@ void Client::setIP(string _ip) {
 
 void Client::setMessage(string conten) {
      try {
-          std::cout << std::flush;
           message.reset(new string(conten));
           if(*message != conten) throw std::range_error("error al establecer el mensaje");
      }

@@ -21,6 +21,7 @@
 #include <queue>
 #include <atomic>
 #include <tuple>
+#include <ios>
 
 using std::make_shared;
 using std::string;
@@ -46,11 +47,14 @@ private:
     std::mutex victoria;
     std::mutex victor;
     std::mutex macaco;
+    std::mutex sockety;
 
     std::condition_variable condition_one;
     std::condition_variable condition_tow;
     std::condition_variable condition_three;
     std::condition_variable condition_response;
+    std::condition_variable condition_access;
+
 
     uint16_t PORT{0};
 
@@ -108,6 +112,7 @@ Neody<T>::Neody() {  }
 
 
 template <class T>
+
 int Neody<T>::http_response(string _xRoute, _callbacks _funcs, string optional_type) {
     try {
         routes.push_back({std::move(_xRoute), std::move(_funcs), std::move(optional_type)});
@@ -171,11 +176,9 @@ void Neody<T>::listen() {
                 std::unique_lock<std::mutex> lock(macaco);
                 condition_one.wait(lock);
              }
-                std::cout << std::flush;
                     
                 if(!worker_one.empty()) {
 
-                
                 std::vector<listen_routes>  sesion_routes;
                 shared_ptr<string>          send_target;
                 std::pair<string, string>   actual_route;
@@ -190,8 +193,6 @@ void Neody<T>::listen() {
 
                 string socket_response {control->getResponse()};
 
-                std::cout << std::flush;
-
                 if (socket_response.empty()){
                     throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
                 }
@@ -199,7 +200,7 @@ void Neody<T>::listen() {
                 sesion_routes = routes; // generate COPY  NOT MOVE X
 
                 for (auto &it : sesion_routes) {
-                    std::cout << std::flush;
+             
                     if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
                         parametros = qProcess->route_refactor_params(socket_response);
                         send_target.reset(new string(it.callbacks.execute(parametros)));
@@ -207,6 +208,7 @@ void Neody<T>::listen() {
                         break;
                     }
                 }
+
                 std::string sendy = cantget ? ERROR_GET : *send_target; 
                 auto data = std::make_tuple(control, sendy);
 
@@ -216,11 +218,9 @@ void Neody<T>::listen() {
                 {  condition_response.notify_all(); victor.unlock(); }
 
                 it = worker_one.erase(it);
-                }
-                     
+                }        
               }
             }
-            
                 _wait(10);
         };
 
@@ -232,10 +232,9 @@ void Neody<T>::listen() {
                    condition_tow.wait(lock);
                 }   
 
-                 std::cout << std::flush;
-
                 if(!worker_two.empty()) {   
 
+    
                 std::vector<listen_routes>  sesion_routes;
                 shared_ptr<string>          send_target;
                 std::pair<string, string>   actual_route;
@@ -250,10 +249,8 @@ void Neody<T>::listen() {
 
                 send_target = make_shared<string>();
                 
-                    string socket_response {control->getResponse()};
-                    std::cout << socket_response << std::endl;
-
-                std::cout << std::flush;
+                string socket_response {control->getResponse()};
+          
 
                 if (socket_response.empty()){
                     throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
@@ -263,7 +260,6 @@ void Neody<T>::listen() {
                 sesion_routes = routes; // generate COPY  NOT MOVE X
 
                 for (auto &it : sesion_routes) {
-                    std::cout << std::flush;
                     if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
                         parametros = qProcess->route_refactor_params(socket_response);
                         send_target.reset(new string(it.callbacks.execute(parametros)));
@@ -296,7 +292,6 @@ void Neody<T>::listen() {
                    std::unique_lock<std::mutex> lock(macaco);
                    condition_three.wait(lock);
                  }
-                std::cout << std::flush;
 
                 if(!worker_three.empty()) {   
 
@@ -314,8 +309,7 @@ void Neody<T>::listen() {
                 send_target = make_shared<string>();
                 string socket_response {control->getResponse()};
                 
-                std::cout << std::flush;
-
+          
                 if (socket_response.empty()){
                     throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
                 }
@@ -324,7 +318,7 @@ void Neody<T>::listen() {
                 sesion_routes = routes; // generate COPY  NOT MOVE X
 
                 for (auto &it : sesion_routes) {
-                    std::cout << std::flush;
+ 
                     if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
                         parametros = qProcess->route_refactor_params(socket_response);
                         send_target.reset(new string(it.callbacks.execute(parametros)));
@@ -346,7 +340,6 @@ void Neody<T>::listen() {
                 }
               }
             }
-
                 _wait(10);
             };
 
@@ -359,11 +352,11 @@ void Neody<T>::listen() {
           }
 
          if(!worker_send.empty()){
-                    std::cout << std::flush;
+
             for(auto it = worker_send.begin(); it != worker_send.end();){
                      try {
                            auto &[sender, data] = *it;         
-                            std::cout << std::flush;
+              
                             sender->sendResponse(data);
                             if(close(sender->getDescription()) < 0) {
                                 std::range_error("ERROR CLOSE SOCKET");
@@ -397,7 +390,7 @@ void Neody<T>::listen() {
                 if (!control->on()){
                     std::range_error("error al lanzar");
                 }
-                std::cout << std::flush;
+             
                 add_queue(std::move(control));
             }
             catch(const std::exception& e) {

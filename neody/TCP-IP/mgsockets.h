@@ -39,9 +39,8 @@ constexpr int MG_CONFUSED = 1;
 constexpr int DEF_HEAP_LIMIT = 512;
 constexpr int DEF_BUFFER_SIZE = 2048;
 
-
 constexpr int UnCATCH_ERROR_CH = -66;
-
+constexpr const char* SOCK_ERR = "_ERROR";
 
 class Engine {
 
@@ -87,8 +86,8 @@ class Server : public Engine {
                <string> buffereOd_data = nullptr;
      shared_ptr
                <int> static_sessions = make_shared<int>(1);
-     std::mutex guardy;
-     std::mutex victoria;
+    
+    static std::mutex VICTORIA;
 
   public:
      
@@ -98,7 +97,7 @@ class Server : public Engine {
 
      int on(function<void(string* clust)>optional = [](string*)->void{});
      int Close();
-     inline int getDescription() { return *socket_id;  }
+     inline int getDescription() {  return *socket_id;  }
      void setSessions(int);
      void sendResponse(string);
      void getResponseProcessing();
@@ -106,7 +105,6 @@ class Server : public Engine {
      inline string getResponse() const { 
            return *buffereOd_data;       
       }
-      
 };
 
 
