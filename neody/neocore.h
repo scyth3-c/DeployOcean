@@ -8,6 +8,7 @@
 #include "HTTP/request/request.hpp"
 
 #include "processing/parameters/parameter_proccess.h"
+#include "workers/route_process.hpp"
 
 #include <thread>
 #include <chrono>
@@ -33,6 +34,8 @@ constexpr int SESSION = 1;
 template <class T>
 class Neody {
 private:
+
+    Worker_t<T> *Worker_maestro = nullptr;
 
     std::vector<std::shared_ptr<T>> worker_one;
     std::vector<std::shared_ptr<T>> worker_two;
@@ -105,10 +108,12 @@ Neody<T>::Neody(uint16_t port) {
     if (port >= 100) {
         PORT = std::move(port);
     }
+    Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
 }
-
 template <class T>
-Neody<T>::Neody() {  }
+Neody<T>::Neody() { 
+     Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
+ }
 
 
 template <class T>
@@ -170,60 +175,8 @@ int Neody<T>::purge(string _xRoute, _callbacks _funcs) {
 template <class T>
 void Neody<T>::listen() {
 
-        auto process_one =   [&]() -> void {
-            while(MASTER_KEY){
-             {
-                std::unique_lock<std::mutex> lock(macaco);
-                condition_one.wait(lock);
-             }
-                    
-                if(!worker_one.empty()) {
 
-                std::vector<listen_routes>  sesion_routes;
-                shared_ptr<string>          send_target;
-                std::pair<string, string>   actual_route;
-                
-                string      parametros{""};
-                bool        cantget = true;
-
-                for(auto it=worker_one.begin(); it != worker_one.end();){
-
-                std::shared_ptr<Server> &control = *it;
-                send_target = make_shared<string>();
-
-                string socket_response {control->getResponse()};
-
-                if (socket_response.empty()){
-                    throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
-                }
-                actual_route = qProcess->route_refactor(socket_response);
-                sesion_routes = routes; // generate COPY  NOT MOVE X
-
-                for (auto &it : sesion_routes) {
-             
-                    if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
-                        parametros = qProcess->route_refactor_params(socket_response);
-                        send_target.reset(new string(it.callbacks.execute(parametros)));
-                        cantget = false;
-                        break;
-                    }
-                }
-
-                std::string sendy = cantget ? ERROR_GET : *send_target; 
-                auto data = std::make_tuple(control, sendy);
-
-                std::lock_guard<std::mutex> guard(victoria);
-                worker_send.push_back(std::move(data));
-
-                {  condition_response.notify_all(); victor.unlock(); }
-
-                it = worker_one.erase(it);
-                }        
-              }
-            }
-                _wait(10);
-        };
-
+        
             auto process_two =   [&]() -> void {
                  while(MASTER_KEY){
 
@@ -403,16 +356,16 @@ void Neody<T>::listen() {
     std::thread _sender(listen_loop_MAIN);
     std::thread _response(hilo_envia);
 
-    std::thread one_worker(process_one);
-    std::thread two_worker(process_two);
-    std::thread three_worker(process_three);
+    std::thread one_worker(Worker_maestro->Execute(macaco, victor, victoria));
+    // std::thread two_worker(process_two);
+    // std::thread three_worker(process_three);
 
     _sender.join();
     _response.join();
     
-    one_worker.join();
-    two_worker.join();
-    three_worker.join();
+    // one_worker.join();
+    // two_worker.join();
+    // three_worker.join();
 }
 
 
@@ -421,7 +374,7 @@ template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &&base) {
     case 0:
             worker_one.push_back(std::move(base));
             {  condition_one.notify_all(); macaco.unlock(); }
-            next_register++;
+            // next_register++;
         break;
     case 1:
             worker_two.push_back(std::move(base));
