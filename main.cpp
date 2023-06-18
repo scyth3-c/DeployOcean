@@ -8,7 +8,7 @@ int main() {
     setbuf(stdout, NULL); 
 
     Router router;
-    uint16_t puerto = 3001;
+    uint16_t puerto = 3000;
         
     router.setPort(puerto);
     std::cout << "servidor corriendo en el puerto: "<< puerto;

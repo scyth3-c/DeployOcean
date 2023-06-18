@@ -351,23 +351,22 @@ void Neody<T>::listen() {
             }
      }
 };
-
-
     std::thread _sender(listen_loop_MAIN);
     std::thread _response(hilo_envia);
 
-    std::thread one_worker(Worker_maestro->Execute(macaco, victor, victoria));
+    auto worker = Worker_maestro->getWorker(macaco, victor, victoria);
+    std::thread procesador_base(worker);
+
     // std::thread two_worker(process_two);
     // std::thread three_worker(process_three);
 
     _sender.join();
     _response.join();
     
-    // one_worker.join();
+    procesador_base.join();
     // two_worker.join();
     // three_worker.join();
 }
-
 
 template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &&base) {
     switch (next_register) {

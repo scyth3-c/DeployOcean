@@ -5,6 +5,8 @@
 #include <mutex>
 #include <string>
 #include <tuple>
+#include <thread>
+#include <chrono>
 #include <condition_variable>
 #include "../HTTP/routes/routes.hpp"
 
@@ -25,31 +27,34 @@ private:
     std::condition_variable  &condition;
     std::condition_variable  &condition_response;
     std::vector<std::tuple<std::shared_ptr<T>, std::string>> &worksend;
-
+    inline void _wait(int milis) const { std::this_thread::sleep_for(std::chrono::milliseconds(milis)); }
 
 public:
     Worker_t(std::vector<std::shared_ptr<T>> &_core, std::shared_ptr<HTTP_QUERY> &_qProcess, std::condition_variable &_condition, std::vector<std::tuple<std::shared_ptr<T>, std::string>> _worksend, std::condition_variable &_condition_response, std::vector<listen_routes> &_routes) : routes(_routes), worksend(_worksend), core(_core), qProcess(_qProcess), condition(_condition), condition_response(_condition_response) {}
     ~Worker_t() {}
 
-    inline auto Execute(std::mutex &macaco, std::mutex &victor, std::mutex &victoria){
+    inline auto getWorker(std::mutex &macaco, std::mutex &victor, std::mutex &victoria){
 
-        return [&]()->void {
-            while(1){
+        return [&]()->void{
+              std::cout << "start" << std::endl;
+
+              while(1){
              {
+                  std::cout << "while" << std::endl;
+
                 std::unique_lock<std::mutex> lock(macaco);
                 condition.wait(lock);
+                  std::cout << "end-while" << std::endl;
+
              }
-        }
 
-        bool base = core.empty();
-        std::cout << base << std::endl;
-       
+            std::cout << "pre-if" << std::endl;
 
-        if (core.empty()){
+                if(!core.empty()) {
 
-                std::cout << "core" << std::endl;
+            std::cout << "if" << std::endl;
 
-             for(auto it=core.begin(); it != core.end();){
+                for(auto it=core.begin(); it != core.end();){
 
                 std::shared_ptr<Server> &control = *it;
                 send_target = make_shared<string>();
@@ -63,7 +68,7 @@ public:
                 sesion_routes = routes; // generate COPY  NOT MOVE X
 
                 for (auto &it : sesion_routes) {
-             
+
                     if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
                         parametros = qProcess->route_refactor_params(socket_response);
                         send_target.reset(new string(it.callbacks.execute(parametros)));
@@ -72,7 +77,7 @@ public:
                     }
                 }
 
-                std::string sendy = cantget ? ERROR_GET : *send_target; 
+                std::string sendy = cantget ? ERROR_GET : *send_target;
                 auto data = std::make_tuple(control, sendy);
 
                 std::lock_guard<std::mutex> guard(victoria);
@@ -81,11 +86,13 @@ public:
                 {  condition_response.notify_all(); victor.unlock(); }
 
                 it = core.erase(it);
-                }   
-        }
-    };
+                }
+              }
+            }
+                _wait(10);
+        };
     }
-};
 
+};
 
 #endif // !ROUTE_PROCESS
