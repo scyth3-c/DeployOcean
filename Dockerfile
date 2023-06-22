@@ -1,11 +1,7 @@
 FROM debian:bullseye
 
 RUN apt-get update
-RUN apt-get install libstdc++-10-dev -y && \
-     apt-get install -y g++-10 && \
-     apt-get install g++-10-multilib -y && \
-     apt-get install -y make 
-
+RUN apt-get install -y libstdc++-10-dev  g++-10 g++-10-multilib make 
 
 RUN mkdir neody
 WORKDIR /neody

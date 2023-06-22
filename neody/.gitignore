@@ -2,3 +2,4 @@ app.cpp
 compile.sh
 BIN
 *.o
+*.d
