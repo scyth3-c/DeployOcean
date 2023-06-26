@@ -24,6 +24,8 @@
 #include <tuple>
 #include <ios>
 
+#include <typeinfo>
+
 using std::make_shared;
 using std::string;
 
@@ -37,7 +39,7 @@ private:
 
     Worker_t<T> *Worker_maestro = nullptr;
 
-    std::vector<std::shared_ptr<T>> worker_one;
+    std::vector<std::shared_ptr<T>&> worker_one;
     std::vector<std::shared_ptr<T>> worker_two;
     std::vector<std::shared_ptr<T>> worker_three;
     
@@ -108,11 +110,26 @@ Neody<T>::Neody(uint16_t port) {
     if (port >= 100) {
         PORT = std::move(port);
     }
-    Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
+    control = make_shared<T>();
+     if (!control->create()) {
+           std::range_error("error al crear");
+        }
+        control->setBuffer(BUFFER);
+        control->setPort(PORT);
+        control->setSessions(SESSION);
+    Worker_maestro = new Worker_t<T>(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
 }
 template <class T>
 Neody<T>::Neody() { 
-     Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
+    control = make_shared<T>();
+
+        if (!control->create()) {
+           std::range_error("error al crear");
+        }
+        control->setBuffer(BUFFER);
+        control->setPort(PORT);
+        control->setSessions(SESSION);
+     Worker_maestro = new Worker_t<T>(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
  }
 
 
@@ -177,149 +194,32 @@ void Neody<T>::listen() {
 
 
         
-            auto process_two =   [&]() -> void {
-                 while(MASTER_KEY){
-
-                {
-                   std::unique_lock<std::mutex> lock(macaco);
-                   condition_tow.wait(lock);
-                }   
-
-                if(!worker_two.empty()) {   
-
-    
-                std::vector<listen_routes>  sesion_routes;
-                shared_ptr<string>          send_target;
-                std::pair<string, string>   actual_route;
-                
-
-                string      parametros{""};
-                bool        cantget = true;
-
-                for(auto it=worker_two.begin(); it != worker_two.end();){
-                
-                std::shared_ptr<Server> &control = *it;
-
-                send_target = make_shared<string>();
-                
-                string socket_response {control->getResponse()};
-          
-
-                if (socket_response.empty()){
-                    throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
-                }
-
-                actual_route = qProcess->route_refactor(socket_response);
-                sesion_routes = routes; // generate COPY  NOT MOVE X
-
-                for (auto &it : sesion_routes) {
-                    if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
-                        parametros = qProcess->route_refactor_params(socket_response);
-                        send_target.reset(new string(it.callbacks.execute(parametros)));
-                        cantget = false;
-                        break;
-                    }
-                }
-
-                std::string sendy = cantget ? ERROR_GET : *send_target; 
-                auto data = std::make_tuple(control, sendy);
-                
-                std::lock_guard<std::mutex> guard(victoria);
-                worker_send.push_back(std::move(data));
-                {  condition_response.notify_all(); victor.unlock(); }
-       
-                it = worker_two.erase(it);
-
-                }
-              }
-            }
-                _wait(10);
-               
-            };
-
-
-
-            auto process_three = [&]() -> void {
-               while(MASTER_KEY){
-                 {
-                   std::unique_lock<std::mutex> lock(macaco);
-                   condition_three.wait(lock);
-                 }
-
-                if(!worker_three.empty()) {   
-
-                std::vector<listen_routes>  sesion_routes;
-                shared_ptr<string>          send_target;
-                std::pair<string, string>   actual_route;
-            
-                string      parametros{""};
-                bool        cantget = true;
-
-                for(auto it=worker_three.begin(); it != worker_three.end();){
-                
-                std::shared_ptr<Server> &control = *it;
-
-                send_target = make_shared<string>();
-                string socket_response {control->getResponse()};
-                
-          
-                if (socket_response.empty()){
-                    throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
-                }
-
-                actual_route = qProcess->route_refactor(socket_response);
-                sesion_routes = routes; // generate COPY  NOT MOVE X
-
-                for (auto &it : sesion_routes) {
- 
-                    if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
-                        parametros = qProcess->route_refactor_params(socket_response);
-                        send_target.reset(new string(it.callbacks.execute(parametros)));
-                        cantget = false;
-                        break;
-                    }
-                }
-
-                std::string sendy = cantget ? ERROR_GET : *send_target; 
-                auto data = std::make_tuple(control, sendy);
-
-                std::lock_guard<std::mutex> guard(victoria);
-                worker_send.push_back(std::move(data));
-
-                {  condition_response.notify_all(); victor.unlock(); }
-              
-                it = worker_three.erase(it);
-
-                }
-              }
-            }
-                _wait(10);
-            };
-
-
+        
     auto hilo_envia = [&]() -> void {
        while(MASTER_KEY){
           {
                 std::unique_lock<std::mutex> lock(victor);
                 condition_response.wait(lock);
           }
+      
 
          if(!worker_send.empty()){
+                
+                for (auto &it: worker_send ) {
 
-            for(auto it = worker_send.begin(); it != worker_send.end();){
-                     try {
-                           auto &[sender, data] = *it;         
-              
-                            sender->sendResponse(data);
-                            if(close(sender->getDescription()) < 0) {
-                                std::range_error("ERROR CLOSE SOCKET");
-                            }
-                            it = worker_send.erase(it);
-                     }
-                     catch(const std::exception& e) {
-                        std::cerr << e.what() << '\n';
-                        }
-                    }
+                  auto &[sender, data] = it;                   
+
+                  sender->sendResponse(data);
+
+                  if(close(sender->getDescription()) < 0) {
+                       std::range_error("ERROR CLOSE SOCKET");
+                  }
+                  std::cout << "after" << std::endl;
+
+                //    it = worker_send.erase(it);
+
+                }
+
             }
             _wait(10);
        }
@@ -329,22 +229,13 @@ void Neody<T>::listen() {
     auto listen_loop_MAIN = [&]() -> void {
         while (MASTER_KEY){
             try {
+
                 qProcess = make_shared<HTTP_QUERY>();
-                control = make_shared<T>();
-
-                if (!control->create()) {
-                    std::range_error("error al crear");
-                }
-
-                control->setBuffer(BUFFER);
-                control->setPort(PORT);
-                control->setSessions(SESSION);
 
                 if (!control->on()){
                     std::range_error("error al lanzar");
                 }
-             
-                add_queue(std::move(control));
+                add_queue(control);
             }
             catch(const std::exception& e) {
                 std::cerr << e.what() << '\n';
@@ -357,31 +248,26 @@ void Neody<T>::listen() {
     auto worker = Worker_maestro->getWorker(macaco, victor, victoria);
     std::thread procesador_base(worker);
 
-    // std::thread two_worker(process_two);
-    // std::thread three_worker(process_three);
-
     _sender.join();
     _response.join();
-    
     procesador_base.join();
-    // two_worker.join();
-    // three_worker.join();
+
 }
 
-template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &&base) {
+template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &base) {
     switch (next_register) {
     case 0:
-            worker_one.push_back(std::move(base));
+            worker_one.push_back(base);
             {  condition_one.notify_all(); macaco.unlock(); }
             // next_register++;
         break;
     case 1:
-            worker_two.push_back(std::move(base));
+            worker_two.push_back(base);
              {  condition_tow.notify_all();  macaco.unlock();}
             next_register++;
         break;
     case 2:
-            worker_three.push_back(std::move(base));
+            worker_three.push_back(base);
              {  condition_three.notify_all(); macaco.unlock(); }
             next_register = 0;
         break;

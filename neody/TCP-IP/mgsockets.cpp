@@ -215,6 +215,9 @@ void Server::getResponseProcessing() {
 
 
 void Server::sendResponse(string _msg) {
+
+     std::cout << _msg << std::endl;
+     
      char* conten = (char *)_msg.c_str();
      try {
           if(strlen(conten) == 0) throw std::range_error("erro al obtener la respuesta");
