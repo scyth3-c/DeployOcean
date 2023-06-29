@@ -23,97 +23,86 @@
 #include <atomic>
 #include <tuple>
 #include <ios>
+#include <assert.h>
 
 using std::make_shared;
 using std::string;
 
-constexpr int BUFFER = 2048;
-constexpr int SESSION = 1;
+namespace neo {
+
+    using utility_workers::Worker_t;
+
+    constexpr int BUFFER = 2048;
+    constexpr int SESSION = 1;
 
 
-template <class T>
-class Neody {
-private:
+    template <class T>
+    class Neody {
+    private:
 
-    Worker_t<T> *Worker_maestro = nullptr;
+        Worker_t<T> *Worker_maestro = nullptr;
 
-    std::vector<std::shared_ptr<T>> worker_one;
-    std::vector<std::shared_ptr<T>> worker_two;
-    std::vector<std::shared_ptr<T>> worker_three;
-    
-    std::vector<std::tuple<std::shared_ptr<T>, string>> worker_send;
-    std::vector<listen_routes> routes;
+        std::vector<std::shared_ptr<T>> worker_one;
 
-    std::shared_ptr<T> control = nullptr;
-    std::shared_ptr<HTTP_QUERY> qProcess = nullptr;
+        std::vector<std::tuple<std::shared_ptr<T>, string>> worker_send;
+        std::vector<listen_routes> routes;
 
-    std::mutex victoria;
-    std::mutex victor;
-    std::mutex macaco;
-    std::mutex sockety;
+        std::shared_ptr<T> control = nullptr;
+        std::shared_ptr<HTTP_QUERY> qProcess = nullptr;
 
-    std::condition_variable condition_one;
-    std::condition_variable condition_tow;
-    std::condition_variable condition_three;
-    std::condition_variable condition_response;
-    std::condition_variable condition_access;
+        std::mutex victoria;
+        std::mutex victor;
+        std::mutex macaco;
 
+        std::condition_variable condition_one;
+        std::condition_variable condition_response;
+        std::condition_variable condition_access;
 
-    uint16_t PORT{0};
+        uint16_t PORT{0};
 
-    unsigned short int _domain = AF_INET;
-    unsigned short int type = SOCK_STREAM;
-    unsigned short int protocol = 0;
-    unsigned short int route_seer = 0;
-    unsigned short int max_iterator = 50;
+        std::atomic<int> next_register = 0;
+        std::atomic<bool> MASTER_KEY = true;
 
-    std::atomic<int> next_register = 0;
-    std::atomic<bool> MASTER_KEY = true;
+    public:
+        explicit Neody(uint16_t port);
+        explicit Neody();
+        ~Neody() {
+            CLOSE();
+            control.reset();
+            qProcess.reset();
+        }
 
-public:
-    Neody(uint16_t port);
-    Neody();
-    ~Neody() {
-        CLOSE();
-        worker_one.clear();
-        worker_two.clear();
-        worker_three.clear();
-        worker_send.clear();
-        control.reset();
-        qProcess.reset();
-    }
+        inline void _wait(int milis) const { std::this_thread::sleep_for(std::chrono::milliseconds(milis)); }
+        inline void CLOSE() { MASTER_KEY = false;  }
 
-    inline void _wait(int milis) const { std::this_thread::sleep_for(std::chrono::milliseconds(milis)); }
-    inline void CLOSE() { MASTER_KEY = false;  }
+        int http_response(string, _callbacks, string optional);
+        int get(string, _callbacks);
+        int post(string, _callbacks);
+        int put(string, _callbacks);
+        int deleteX(string, _callbacks);
+        int patch(string, _callbacks);
+        int head(string, _callbacks);
+        int options(string, _callbacks);
+        int link(string, _callbacks);
+        int unlink(string, _callbacks);
+        int purge(string, _callbacks);
 
-    int http_response(string, _callbacks, string optional);
-    int get(string, _callbacks);
-    int post(string, _callbacks);
-    int put(string, _callbacks);
-    int deleteX(string, _callbacks);
-    int patch(string, _callbacks);
-    int head(string, _callbacks);
-    int options(string, _callbacks);
-    int link(string, _callbacks);
-    int unlink(string, _callbacks);
-    int purge(string, _callbacks);
-    
-    int setPort(uint16_t) noexcept;
-    void listen();
-    void add_queue(std::shared_ptr<T> &&);
-};
+        int setPort(uint16_t) noexcept;
+        void listen();
+        void add_queue(std::shared_ptr<T> &);
+    };
 
-template <class T>
-Neody<T>::Neody(uint16_t port) {
+    template <class T>
+    Neody<T>::Neody(uint16_t port) {
     if (port >= 100) {
-        PORT = std::move(port);
-    }
-    Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
+    PORT = std::move(port);
+}
+Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
 }
 template <class T>
-Neody<T>::Neody() { 
-     Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
- }
+Neody<T>::Neody() {
+    Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
+}
 
 
 template <class T>
@@ -175,233 +164,105 @@ int Neody<T>::purge(string _xRoute, _callbacks _funcs) {
 template <class T>
 void Neody<T>::listen() {
 
+    qProcess = make_shared<HTTP_QUERY>();
+    control = make_shared<T>();
 
-        
-            auto process_two =   [&]() -> void {
-                 while(MASTER_KEY){
+    if (!control->create()) {
+        std::range_error("error al crear");
+    }
 
-                {
-                   std::unique_lock<std::mutex> lock(macaco);
-                   condition_tow.wait(lock);
-                }   
-
-                if(!worker_two.empty()) {   
-
-    
-                std::vector<listen_routes>  sesion_routes;
-                shared_ptr<string>          send_target;
-                std::pair<string, string>   actual_route;
-                
-
-                string      parametros{""};
-                bool        cantget = true;
-
-                for(auto it=worker_two.begin(); it != worker_two.end();){
-                
-                std::shared_ptr<Server> &control = *it;
-
-                send_target = make_shared<string>();
-                
-                string socket_response {control->getResponse()};
-          
-
-                if (socket_response.empty()){
-                    throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
-                }
-
-                actual_route = qProcess->route_refactor(socket_response);
-                sesion_routes = routes; // generate COPY  NOT MOVE X
-
-                for (auto &it : sesion_routes) {
-                    if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
-                        parametros = qProcess->route_refactor_params(socket_response);
-                        send_target.reset(new string(it.callbacks.execute(parametros)));
-                        cantget = false;
-                        break;
-                    }
-                }
-
-                std::string sendy = cantget ? ERROR_GET : *send_target; 
-                auto data = std::make_tuple(control, sendy);
-                
-                std::lock_guard<std::mutex> guard(victoria);
-                worker_send.push_back(std::move(data));
-                {  condition_response.notify_all(); victor.unlock(); }
-       
-                it = worker_two.erase(it);
-
-                }
-              }
-            }
-                _wait(10);
-               
-            };
-
-
-
-            auto process_three = [&]() -> void {
-               while(MASTER_KEY){
-                 {
-                   std::unique_lock<std::mutex> lock(macaco);
-                   condition_three.wait(lock);
-                 }
-
-                if(!worker_three.empty()) {   
-
-                std::vector<listen_routes>  sesion_routes;
-                shared_ptr<string>          send_target;
-                std::pair<string, string>   actual_route;
-            
-                string      parametros{""};
-                bool        cantget = true;
-
-                for(auto it=worker_three.begin(); it != worker_three.end();){
-                
-                std::shared_ptr<Server> &control = *it;
-
-                send_target = make_shared<string>();
-                string socket_response {control->getResponse()};
-                
-          
-                if (socket_response.empty()){
-                    throw std::range_error("FAILED TO READ REQUEST, WAIT FEWS SECS BEFORE STARTING AGAIN");
-                }
-
-                actual_route = qProcess->route_refactor(socket_response);
-                sesion_routes = routes; // generate COPY  NOT MOVE X
-
-                for (auto &it : sesion_routes) {
- 
-                    if (it.route.getType() == actual_route.first && it.route.getName() == actual_route.second) {
-                        parametros = qProcess->route_refactor_params(socket_response);
-                        send_target.reset(new string(it.callbacks.execute(parametros)));
-                        cantget = false;
-                        break;
-                    }
-                }
-
-                std::string sendy = cantget ? ERROR_GET : *send_target; 
-                auto data = std::make_tuple(control, sendy);
-
-                std::lock_guard<std::mutex> guard(victoria);
-                worker_send.push_back(std::move(data));
-
-                {  condition_response.notify_all(); victor.unlock(); }
-              
-                it = worker_three.erase(it);
-
-                }
-              }
-            }
-                _wait(10);
-            };
-
+    control->setBuffer(BUFFER);
+    control->setPort(PORT);
+    control->setSessions(SESSION);
 
     auto hilo_envia = [&]() -> void {
-       while(MASTER_KEY){
-          {
+
+
+
+        while(MASTER_KEY){
+            {
                 std::unique_lock<std::mutex> lock(victor);
                 condition_response.wait(lock);
-          }
-
-         if(!worker_send.empty()){
-
-            for(auto it = worker_send.begin(); it != worker_send.end();){
-                     try {
-                           auto &[sender, data] = *it;         
-              
-                            sender->sendResponse(data);
-                            if(close(sender->getDescription()) < 0) {
-                                std::range_error("ERROR CLOSE SOCKET");
-                            }
-                            it = worker_send.erase(it);
-                     }
-                     catch(const std::exception& e) {
-                        std::cerr << e.what() << '\n';
-                        }
-                    }
             }
-            _wait(10);
-       }
+            std::cout << "hilo envia" << std::endl;
+
+            assert("me voy");
+
+//            if(!worker_send.empty()){
+//
+//
+//                std::cout << "prueba" << std::endl;
+//
+//                for(auto it = worker_send.begin(); it != worker_send.end();){
+//                    try {
+//                        auto &[sender, data] = *it;
+//
+//                        sender->sendResponse(data);
+//                        if(close(sender->getDescription()) < 0) {
+//                            std::range_error("ERROR CLOSE SOCKET");
+//                        }
+//                        it = worker_send.erase(it);
+//                    }
+//                    catch(const std::exception& e) {
+//                        std::cerr << e.what() << '\n';
+//                    }
+//                }
+//            }
+//            _wait(10);
+        }
     };
 
 
     auto listen_loop_MAIN = [&]() -> void {
         while (MASTER_KEY){
             try {
-                qProcess = make_shared<HTTP_QUERY>();
-                control = make_shared<T>();
-
-                if (!control->create()) {
-                    std::range_error("error al crear");
-                }
-
-                control->setBuffer(BUFFER);
-                control->setPort(PORT);
-                control->setSessions(SESSION);
 
                 if (!control->on()){
                     std::range_error("error al lanzar");
                 }
-             
-                add_queue(std::move(control));
+                add_queue(control);
             }
             catch(const std::exception& e) {
                 std::cerr << e.what() << '\n';
             }
-     }
-};
+        }
+    };
+
     std::thread _sender(listen_loop_MAIN);
     std::thread _response(hilo_envia);
 
-    auto worker = Worker_maestro->getWorker(macaco, victor, victoria);
-    std::thread procesador_base(worker);
-
-    // std::thread two_worker(process_two);
-    // std::thread three_worker(process_three);
+    std::thread procesador_base(Worker_maestro->getWorker(macaco, victor, victoria));
 
     _sender.join();
     _response.join();
-    
+
     procesador_base.join();
-    // two_worker.join();
-    // three_worker.join();
 }
 
-template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &&base) {
+template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &base) {
     switch (next_register) {
-    case 0:
+        case 0:
             worker_one.push_back(std::move(base));
             {  condition_one.notify_all(); macaco.unlock(); }
             // next_register++;
-        break;
-    case 1:
-            worker_two.push_back(std::move(base));
-             {  condition_tow.notify_all();  macaco.unlock();}
-            next_register++;
-        break;
-    case 2:
-            worker_three.push_back(std::move(base));
-             {  condition_three.notify_all(); macaco.unlock(); }
-            next_register = 0;
-        break;
-    default:
-        break;
+            break;
+        default:
+            break;
     }
 }
-
 
 
 template <class T>
 int Neody<T>::setPort(uint16_t _port) noexcept {
-    if (_port >= 100) { PORT = std::move(_port); }
-    else {
-        return -1;
-    }
-    return 0;
+if (_port >= 100) { PORT = std::move(_port); }
+else {
+return -1;
+}
+return 0;
 }
 
 
 typedef Neody<Server> Router;
+}
 
-#endif // !Neody_HPP
+#endif // NEODIMIO_HPP

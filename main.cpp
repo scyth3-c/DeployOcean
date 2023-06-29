@@ -2,16 +2,16 @@
 #include <stdio.h>
 #include "neody/neocore.h"
 
+using  neo::Router;
 
 int main() {
- 
-    setbuf(stdout, NULL); 
 
     Router router;
-    uint16_t puerto = 3000;
-        
+    uint16_t puerto = 3004;
+
+
     router.setPort(puerto);
-    std::cout << "servidor corriendo en el puerto: "<< puerto;
+    std::cout << "servidor corriendo en el puerto: "<< puerto << std::endl;
 
 
     router.get("/verify",{ [&](Query &http) {
@@ -22,6 +22,7 @@ int main() {
     router.get("/",{ [&](Query &http) {
         http.readFile("./index.html", "text/html");
     }});
+
 
 
     router.listen();
