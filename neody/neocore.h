@@ -24,9 +24,12 @@
 #include <tuple>
 #include <ios>
 #include <assert.h>
+#include <functional>
 
 using std::make_shared;
 using std::string;
+
+
 
 namespace neo {
 
@@ -164,28 +167,16 @@ int Neody<T>::purge(string _xRoute, _callbacks _funcs) {
 template <class T>
 void Neody<T>::listen() {
 
-    qProcess = make_shared<HTTP_QUERY>();
-    control = make_shared<T>();
 
-    if (!control->create()) {
-        std::range_error("error al crear");
-    }
-
-    control->setBuffer(BUFFER);
-    control->setPort(PORT);
-    control->setSessions(SESSION);
-
-    auto hilo_envia = [&]() -> void {
-
-
+      std::function<void(void)> hilo_envia  = [&]() -> void {
 
         while(MASTER_KEY){
             {
                 std::unique_lock<std::mutex> lock(victor);
                 condition_response.wait(lock);
             }
-            std::cout << "hilo envia" << std::endl;
 
+            std::cout << "hilo envia" << std::endl;
             assert("me voy");
 
 //            if(!worker_send.empty()){
@@ -213,9 +204,21 @@ void Neody<T>::listen() {
     };
 
 
-    auto listen_loop_MAIN = [&]() -> void {
+    std::function<void(void)> listen_loop_MAIN = [&]() -> void {
         while (MASTER_KEY){
             try {
+
+                qProcess = make_shared<HTTP_QUERY>();
+                control = make_shared<T>();
+
+                if (!control->create()) {
+                    std::range_error("error al crear");
+                }
+
+                control->setBuffer(BUFFER);
+                control->setPort(PORT);
+                control->setSessions(SESSION);
+
 
                 if (!control->on()){
                     std::range_error("error al lanzar");
@@ -242,7 +245,7 @@ void Neody<T>::listen() {
 template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &base) {
     switch (next_register) {
         case 0:
-            worker_one.push_back(std::move(base));
+            worker_one.push_back(base);
             {  condition_one.notify_all(); macaco.unlock(); }
             // next_register++;
             break;

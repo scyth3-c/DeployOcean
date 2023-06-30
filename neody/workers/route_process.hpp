@@ -58,7 +58,7 @@ namespace utility_workers {
 
                         for(auto it=core.begin(); it != core.end();){
 
-                            auto &control = *it;
+                            shared_ptr<T> control = dup(*it->getDescription());
                             bool cantget = true;
 
                             std::string send_target     {""};
