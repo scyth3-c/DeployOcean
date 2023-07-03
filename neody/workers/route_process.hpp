@@ -41,7 +41,6 @@ namespace utility_workers {
         {}
         ~Worker_t() {}
 
-
         inline auto getWorker(std::mutex &macaco, std::mutex &victor, std::mutex &victoria){
 
             return [&]()->void{
@@ -58,7 +57,7 @@ namespace utility_workers {
 
                         for(auto it=core.begin(); it != core.end();){
 
-                            shared_ptr<T> control = dup(*it->getDescription());
+                            shared_ptr<T> control = *it;
                             bool cantget = true;
 
                             std::string send_target     {""};
@@ -85,10 +84,11 @@ namespace utility_workers {
                             }
 
                             std::string sendy = cantget ? ERROR_GET : send_target;
+                              
                             auto data = std::make_tuple(control, sendy);
                             std::lock_guard<std::mutex> guard(victoria);
 
-                            worksend.push_back(std::move(data));
+                            worksend.push_back(data);
                             {  condition_response.notify_all(); victor.unlock(); }
 
                             it = core.erase(it);

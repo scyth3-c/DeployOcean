@@ -29,20 +29,18 @@
 using std::make_shared;
 using std::string;
 
-
-
-namespace neo {
+namespace neo
+{
 
     using utility_workers::Worker_t;
 
     constexpr int BUFFER = 2048;
     constexpr int SESSION = 1;
 
-
     template <class T>
-    class Neody {
+    class Neody
+    {
     private:
-
         Worker_t<T> *Worker_maestro = nullptr;
 
         std::vector<std::shared_ptr<T>> worker_one;
@@ -69,14 +67,15 @@ namespace neo {
     public:
         explicit Neody(uint16_t port);
         explicit Neody();
-        ~Neody() {
+        ~Neody()
+        {
             CLOSE();
             control.reset();
             qProcess.reset();
         }
 
         inline void _wait(int milis) const { std::this_thread::sleep_for(std::chrono::milliseconds(milis)); }
-        inline void CLOSE() { MASTER_KEY = false;  }
+        inline void CLOSE() { MASTER_KEY = false; }
 
         int http_response(string, _callbacks, string optional);
         int get(string, _callbacks);
@@ -96,176 +95,197 @@ namespace neo {
     };
 
     template <class T>
-    Neody<T>::Neody(uint16_t port) {
-    if (port >= 100) {
-    PORT = std::move(port);
-}
-Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
-}
-template <class T>
-Neody<T>::Neody() {
-    Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
-}
-
-
-template <class T>
-
-int Neody<T>::http_response(string _xRoute, _callbacks _funcs, string optional_type) {
-    try {
-        routes.push_back({std::move(_xRoute), std::move(_funcs), std::move(optional_type)});
+    Neody<T>::Neody(uint16_t port)
+    {
+        if (port >= 100)
+        {
+            PORT = std::move(port);
+        }
+        Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
     }
-    catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
-        return -1;
+    template <class T>
+    Neody<T>::Neody()
+    {
+        Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
     }
-    return 0;
-}
 
+    template <class T>
 
+    int Neody<T>::http_response(string _xRoute, _callbacks _funcs, string optional_type)
+    {
+        try
+        {
+            routes.push_back({std::move(_xRoute), std::move(_funcs), std::move(optional_type)});
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << '\n';
+            return -1;
+        }
+        return 0;
+    }
 
-template <class T>
-int Neody<T>::get(string _xRoute, _callbacks _funcs){
-    return http_response(_xRoute, _funcs, GET_TYPE);
-}
-template <class T>
-int Neody<T>::post(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, POST_TYPE);
-}
-template <class T>
-int Neody<T>::put(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, PUT_TYPE);
-}
-template <class T>
-int Neody<T>::deleteX(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, DELETE_TYPE);
-}
-template <class T>
-int Neody<T>::patch(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, PATCH_TYPE);
-}
-template <class T>
-int Neody<T>::head(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, HEAD_TYPE);
-}
-template <class T>
-int Neody<T>::options(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, OPTIONS_TYPE);
-}
-template <class T>
-int Neody<T>::link(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, LINK_TYPE);
-}
-template <class T>
-int Neody<T>::unlink(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, UNLINK_TYPE);
-}
-template <class T>
-int Neody<T>::purge(string _xRoute, _callbacks _funcs) {
-    return http_response(_xRoute, _funcs, PURGE_TYPE);
-}
+    template <class T>
+    int Neody<T>::get(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, GET_TYPE);
+    }
+    template <class T>
+    int Neody<T>::post(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, POST_TYPE);
+    }
+    template <class T>
+    int Neody<T>::put(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, PUT_TYPE);
+    }
+    template <class T>
+    int Neody<T>::deleteX(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, DELETE_TYPE);
+    }
+    template <class T>
+    int Neody<T>::patch(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, PATCH_TYPE);
+    }
+    template <class T>
+    int Neody<T>::head(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, HEAD_TYPE);
+    }
+    template <class T>
+    int Neody<T>::options(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, OPTIONS_TYPE);
+    }
+    template <class T>
+    int Neody<T>::link(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, LINK_TYPE);
+    }
+    template <class T>
+    int Neody<T>::unlink(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, UNLINK_TYPE);
+    }
+    template <class T>
+    int Neody<T>::purge(string _xRoute, _callbacks _funcs)
+    {
+        return http_response(_xRoute, _funcs, PURGE_TYPE);
+    }
 
-template <class T>
-void Neody<T>::listen() {
+    template <class T>
+    void Neody<T>::listen()
+    {
 
-
-      std::function<void(void)> hilo_envia  = [&]() -> void {
-
-        while(MASTER_KEY){
+        std::function<void(void)> hilo_envia = [&]() -> void
+        {
+            while (MASTER_KEY)
             {
-                std::unique_lock<std::mutex> lock(victor);
-                condition_response.wait(lock);
-            }
-
-            std::cout << "hilo envia" << std::endl;
-            assert("me voy");
-
-//            if(!worker_send.empty()){
-//
-//
-//                std::cout << "prueba" << std::endl;
-//
-//                for(auto it = worker_send.begin(); it != worker_send.end();){
-//                    try {
-//                        auto &[sender, data] = *it;
-//
-//                        sender->sendResponse(data);
-//                        if(close(sender->getDescription()) < 0) {
-//                            std::range_error("ERROR CLOSE SOCKET");
-//                        }
-//                        it = worker_send.erase(it);
-//                    }
-//                    catch(const std::exception& e) {
-//                        std::cerr << e.what() << '\n';
-//                    }
-//                }
-//            }
-//            _wait(10);
-        }
-    };
-
-
-    std::function<void(void)> listen_loop_MAIN = [&]() -> void {
-        while (MASTER_KEY){
-            try {
-
-                qProcess = make_shared<HTTP_QUERY>();
-                control = make_shared<T>();
-
-                if (!control->create()) {
-                    std::range_error("error al crear");
+                {
+                    std::unique_lock<std::mutex> lock(victor);
+                    condition_response.wait(lock);
                 }
 
-                control->setBuffer(BUFFER);
-                control->setPort(PORT);
-                control->setSessions(SESSION);
+                if (!worker_send.empty()) {
+                    std::cout << std::flush;
+                    for (auto it = worker_send.begin(); it != worker_send.end();) {
+                        
+                        try {
+                            auto &[sender, data] = *it;
 
+                            std::cout << data << std::endl;
 
-                if (!control->on()){
-                    std::range_error("error al lanzar");
+                            sender->sendResponse(data);
+                            if (close(sender->getDescription()) < 0) {
+                                std::range_error("ERROR CLOSE SOCKET");
+                            }
+                            it = worker_send.erase(it);
+                        }
+                        catch (const std::exception &e) {
+                            std::cerr << e.what() << '\n';
+                        }
+                    }
                 }
-                add_queue(control);
+                _wait(10);
             }
-            catch(const std::exception& e) {
-                std::cerr << e.what() << '\n';
+        };
+ 
+
+
+        std::function<void(void)> listen_loop_MAIN = [&]() -> void {
+            while (MASTER_KEY) {
+                try {
+                    
+                    qProcess = make_shared<HTTP_QUERY>();
+                    control = make_shared<T>();
+
+                    if (!control->create())
+                    {
+                        std::range_error("error al crear");
+                    }
+
+                    control->setBuffer(BUFFER);
+                    control->setPort(PORT);
+                    control->setSessions(SESSION);
+
+                    if (!control->on()) {
+                        std::range_error("error al lanzar");
+                    }
+                    add_queue(control);
+                }
+                catch (const std::exception &e) {
+                    std::cerr << e.what() << '\n';
+                }
             }
-        }
-    };
+        };
 
-    std::thread _sender(listen_loop_MAIN);
-    std::thread _response(hilo_envia);
+        std::thread _sender(listen_loop_MAIN);
+        std::thread _response(hilo_envia);
 
-    std::thread procesador_base(Worker_maestro->getWorker(macaco, victor, victoria));
+        std::thread procesador_base(Worker_maestro->getWorker(macaco, victor, victoria));
 
-    _sender.join();
-    _response.join();
+        _sender.join();
+        _response.join();
 
-    procesador_base.join();
-}
+        procesador_base.join();
+    }
 
-template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &base) {
-    switch (next_register) {
+    template <class T>
+    void Neody<T>::add_queue(std::shared_ptr<T> &base)
+    {
+        switch (next_register)
+        {
         case 0:
             worker_one.push_back(base);
-            {  condition_one.notify_all(); macaco.unlock(); }
+            {
+                condition_one.notify_all();
+                macaco.unlock();
+            }
             // next_register++;
             break;
         default:
             break;
+        }
     }
-}
 
+    template <class T>
+    int Neody<T>::setPort(uint16_t _port) noexcept
+    {
+        if (_port >= 100)
+        {
+            PORT = std::move(_port);
+        }
+        else
+        {
+            return -1;
+        }
+        return 0;
+    }
 
-template <class T>
-int Neody<T>::setPort(uint16_t _port) noexcept {
-if (_port >= 100) { PORT = std::move(_port); }
-else {
-return -1;
-}
-return 0;
-}
-
-
-typedef Neody<Server> Router;
+    typedef Neody<Server> Router;
 }
 
 #endif // NEODIMIO_HPP
