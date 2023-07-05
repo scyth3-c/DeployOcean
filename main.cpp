@@ -1,17 +1,13 @@
 #include <iostream>
-#include <stdio.h>
 #include "neody/neocore.h"
 
-
 int main() {
- 
-    setbuf(stdout, NULL); 
 
     Router router;
-    uint16_t puerto = 3000;
+    uint16_t puerto = 3001;
         
     router.setPort(puerto);
-    std::cout << "servidor corriendo en el puerto: "<< puerto;
+    std::cout << "servidor corriendo en el puerto: "<< puerto << std::endl;
 
 
     router.get("/verify",{ [&](Query &http) {

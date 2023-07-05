@@ -127,7 +127,6 @@ public:
 
         return body;
     }
-    ~CppReader() {}
 };
 
 #endif // ! CPP_READER_HPP

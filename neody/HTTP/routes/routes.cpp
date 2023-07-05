@@ -74,15 +74,6 @@ tasty_temp.reset();
 
 }
 
-void  Query::neo(string path, std::function<void()> callback) noexcept {
-    NeoRender reader;
-    string body = reader.processing(path);
-    last = utility_t::prepare_basic(body, "text/html", headers);
-    reader.~NeoRender();
-    callback();
-}
-
-
 
 void Query::setHeaders(string body) noexcept {
  headers += body + "\n";

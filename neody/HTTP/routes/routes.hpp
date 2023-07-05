@@ -71,7 +71,6 @@ class Query {
     void    readFileX(string,string, std::function<void()> opcional=[]()->void{}) noexcept;
     void    compose(string,int, std::function<void()> opcional=[]()->void{}) noexcept;
     void    render(string, std::function<dataRender(dataRender&)> opcional=[](dataRender&)->dataRender{ return *_cache; }) noexcept;
-    void    neo(string, std::function<void()> opcional=[]()->void{}) noexcept;
 
     // PARAMS:  CONTEN  STATUS OPTIONAL CALLBACK
      void    json(string, int, std::function<void()> opcional=[]()->void{}) noexcept;
@@ -113,8 +112,6 @@ inline string execute(string _raw) {
 };
 typedef Core_init_t<std::function<void(Query&)>> _callbacks;
 
-
-
 struct Route {
     private:
         string route_name{},
@@ -140,9 +137,5 @@ struct listen_routes {
     Route route;
     _callbacks callbacks;
 };
-
-
-
-
 
 #endif /*ROUTES_DEMAND_HPP_*/

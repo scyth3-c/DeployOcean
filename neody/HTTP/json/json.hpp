@@ -49,7 +49,7 @@ struct JSON_t {
         return json();
     }
 };
-typedef JSON_t<string> JSON;
+typedef JSON_t<string> JSON_s;
 
 
 #endif // ! JSON_HPP

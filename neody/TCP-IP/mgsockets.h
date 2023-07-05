@@ -10,7 +10,6 @@
 
 #include <memory>
 #include <unistd.h>
-#include <stdlib.h>
 #include <string>
 #include <cstring>
 #include <functional>
@@ -34,13 +33,13 @@ constexpr int PROTOCOL = 0;
 
 constexpr int MG_ERROR = -1;
 constexpr int MG_OK = 0;
-constexpr int MG_CONFUSED = 1;
+[[maybe_unused]] constexpr int MG_CONFUSED = 1;
 
 constexpr int DEF_HEAP_LIMIT = 512;
 constexpr int DEF_BUFFER_SIZE = 2048;
 
 constexpr int UnCATCH_ERROR_CH = -66;
-constexpr const char* SOCK_ERR = "_ERROR";
+[[maybe_unused]] constexpr const char* SOCK_ERR = "_ERROR";
 
 class Engine {
 
@@ -63,19 +62,21 @@ class Engine {
         virtual ~Engine() = default;
 
         int create();
-        int 
+
+    [[maybe_unused]] int
              setBuffer(int),
              setHeapLimit(int),
              getHeapLimit(),
              setPort(uint16_t),
              getPort();
 
-          void* _cache;
+    [[maybe_unused]]  void* _cache;
         
         virtual void getResponseProcessing() = 0;
         virtual int on(function<void(string*)>optional = [](string*)->void{}) = 0;
-        virtual int Close() = 0;
-        virtual string getResponse() const = 0;
+
+        [[maybe_unused]] virtual int Close() = 0;
+        [[nodiscard]] virtual string getResponse() const = 0;
 };
 
 
@@ -86,29 +87,28 @@ class Server : public Engine {
                <string> buffereOd_data = nullptr;
      shared_ptr
                <int> static_sessions = make_shared<int>(1);
-    
-    static std::mutex VICTORIA;
+
+    [[maybe_unused]] static std::mutex VICTORIA;
 
   public:
      
-     Server(uint16_t Port) : Engine(Port){}
+     explicit Server(uint16_t Port) : Engine(Port){}
      Server() : Engine(DEFAULT_PORT){}
-     ~Server(){}
 
-     int on(function<void(string* clust)>optional = [](string*)->void{});
-     int Close();
-     inline int getDescription() {  return *socket_id;  }
+     int on(function<void(string* clust)>optional = [](string*)->void{}) override;
+     int Close() override;
+    [[maybe_unused]] inline int getDescription() {  return *socket_id;  }
      void setSessions(int);
-     void sendResponse(string);
-     void getResponseProcessing();
+     void sendResponse(const string&);
+     void getResponseProcessing() override;
 
-     inline string getResponse() const { 
+     [[nodiscard]] inline string getResponse()  const override {
            return *buffereOd_data;       
       }
 };
 
 
-class Client : public Engine {
+class [[maybe_unused]] Client : public Engine {
 
      private: 
         shared_ptr
@@ -121,40 +121,40 @@ class Client : public Engine {
                     <string> buffereOd_data = nullptr;
 
      public:
-          Client(uint16_t Port) : Engine(Port){}
+    [[maybe_unused]] explicit Client(uint16_t Port) : Engine(Port){}
           Client() : Engine(DEFAULT_PORT){}
-          ~Client(){}
 
-     int on(function<void(string*)>optional = [](string*)->void{});
-     int Close();
-     void setMessage(string);
-     void setIP(string ip = LOCALHOST);
-     void getResponseProcessing();
-     inline string getResponse() const { return  *buffereOd_data; }
+     int on(function<void(string*)>optional = [](string*)->void{}) override;
+     int Close() override;
+
+    [[maybe_unused]] void setMessage(const string&);
+    [[maybe_unused]] void setIP(const string& ip = LOCALHOST);
+     void getResponseProcessing() override;
+     [[nodiscard]] inline std::string getResponse() const override { return  *buffereOd_data; }
 };
 
 
 
-constexpr auto HTML = "text/html; charset=utf-8 ";
-constexpr auto _JSON = "application/json ";
+[[maybe_unused]] constexpr const char* const HTML = "text/html; charset=utf-8 ";
+constexpr const char* JSON = "application/json ";
 
-struct WEB {
+struct [[maybe_unused]] WEB {
 
-     WEB(){}
+    explicit WEB()= default;
 
-     static string json(string _txt, string status="200 OK") {
+    [[maybe_unused]] static string json(const string& _txt, const string& status="200 OK") {
       return       "HTTP/1.1 "+status+"\n"
                    "Server: Neody/0.5\n"
-                   "Content-Type: "+ _JSON  +"\n"
+                   "Content-Type: "+ JSON  +"\n"
                    "Content-Length: " + std::to_string(_txt.length()) + "\n"
                    "Accept-Ranges: bytes\n" +
                    "Connection: close\n"
                    "\n" +
                    _txt;
      }
-     
 
-     static string custom(string _txt, string type, string headers,  string status="200 OK"){
+
+    [[maybe_unused]] static string custom(const string& _txt, const string& type, const string& headers,  const string& status="200 OK"){
            return  "HTTP/1.1 "+status+"\n"
                    "Server: Neody/0.5\n"
                    "Content-Type: "+type+"\n"
@@ -170,22 +170,22 @@ struct WEB {
 
 template<class...P>
 struct HEADERS_MG {
-    HEADERS_MG(){}
-    HEADERS_MG(std::initializer_list<P...>list): body(list) {}
+    HEADERS_MG()= default;
+    [[maybe_unused]] HEADERS_MG(std::initializer_list<P...>list): body(list) {}
     vector<string> body;
-    string generate(){
-        string response{""};
+    [[maybe_unused]] string generate(){
+        string response;
         for (auto &it : body) {
             response += it + "\n";
         }
         return response;
     }
-};  
+};
 
-typedef HEADERS_MG<string> Headers;
+[[maybe_unused]] typedef HEADERS_MG<string> Headers;
 
 
-constexpr auto HTTP_ERROR = "HTTP/1.1 400 BAD\n"
+[[maybe_unused]] constexpr const char* const HTTP_ERROR = "HTTP/1.1 400 BAD\n"
                            "Server: Neody/0.5\n"
                            "Content-Type: application/json\n"
                            "Content-Length: 25\n"
