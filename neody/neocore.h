@@ -10,6 +10,7 @@
 #include "processing/parameters/parameter_proccess.h"
 #include "workers/route_process.hpp"
 #include "workers/send_process.h"
+#include "workers/main_process.h"
 
 #include "utils/enums.h"
 #include "utils/sysprocess.h"
@@ -34,9 +35,7 @@ using std::string;
 
 using workers::Worker_t;
 using workers::Send_t;
-
-constexpr int BUFFER = enums::neo::eSize::BUFFER;
-constexpr int SESSION = enums::neo::eSize::SESSION;
+using workers::pMain_t;
 
 template <class T>
 class Neody {
@@ -44,13 +43,14 @@ private:
 
     Worker_t<T> *Worker_maestro = nullptr;
     Send_t<T> *Send_maestro = nullptr;
+    pMain_t<T> *Main_maestro = nullptr;
 
     std::vector<std::shared_ptr<T>> worker_one;
     
     std::vector<std::tuple<std::shared_ptr<T>, string>> worker_send;
     std::vector<listen_routes> routes;
 
-    std::shared_ptr<T> control = nullptr;
+    std::shared_ptr<T> control;
     std::shared_ptr<HTTP_QUERY> qProcess = nullptr;
 
     std::mutex victoria;
@@ -63,19 +63,9 @@ private:
 
     uint16_t PORT{enums::neo::eSize::DEF_PORT};
 
-    std::atomic<int> next_register =  enums::neo::DEF_REG;
-    std::atomic<bool> MASTER_KEY = enums::neo::eSize::SESSION;
-
 public:
     [[maybe_unused]] [[maybe_unused]]  explicit Neody(uint16_t port);
     explicit Neody();
-    ~Neody() {
-        CLOSE();
-        control.reset();
-        qProcess.reset();
-    }
-
-    inline void CLOSE() noexcept { MASTER_KEY = false;  }
 
     int http_response(string, _callbacks, string optional);
     [[maybe_unused]] int get(string, _callbacks);
@@ -91,18 +81,22 @@ public:
     
     int setPort(uint16_t) noexcept;
     void listen();
-    void add_queue(std::shared_ptr<T> &);
 };
 
 template <class T>
 [[maybe_unused]] Neody<T>::Neody(uint16_t port) {
     if (port >= enums::neo::eSize::MIN_PORT) { PORT = port; }
+
+    Main_maestro = new pMain_t(control, condition_one, worker_one, macaco);
     Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
     Send_maestro = new Send_t(worker_send, condition_response);
+
 }
 
 template <class T>
-Neody<T>::Neody() { 
+Neody<T>::Neody() {
+
+     Main_maestro = new pMain_t(control, condition_one, worker_one, macaco);
      Worker_maestro = new Worker_t(worker_one, qProcess, condition_one, worker_send, condition_response, routes);
      Send_maestro = new Send_t(worker_send, condition_response);
 }
@@ -164,60 +158,28 @@ template <class T>
 template <class T>
 void Neody<T>::listen() {
 
-    auto listen_loop_MAIN = [&]() -> void {
-        while (MASTER_KEY){
-            try {
-
-                control = make_shared<T>();
-
-                if (!control->create()) {
-                    std::range_error("error al crear");
-                }
-
-                control->setBuffer(BUFFER);
-                control->setPort(PORT);
-                control->setSessions(SESSION);
-
-                if (!control->on()){
-                    std::range_error("error al lanzar");
-                }
-                add_queue(control);
-            }
-            catch(const std::exception& e) {
-                std::cerr << e.what() << '\n';
-            }
-     }
-};
-
+    auto main = Main_maestro->getMainProcess(PORT);
     auto worker = Worker_maestro->getWorker(macaco, victor, victoria);
     auto Sender = Send_maestro->getSendProcess(victor);
 
     std::thread _worker(worker);
     std::thread _response(Sender);
-    std::thread _sender(listen_loop_MAIN);
+    std::thread _main(main);
 
-    _sender.join();
+    _main.join();
     _response.join();
     _worker.join();
 }
 
-template<class T> void Neody<T>::add_queue(std::shared_ptr<T> &base) {
-    switch (next_register.load()) {
-    case 0:
-            worker_one.push_back(base);
-            {  condition_one.notify_all(); macaco.unlock(); }
-            // next_register.store(next_register.load() + 1);
-       break;
-    default:
-        break;
-    }
-}
 
 template <class T>
 int Neody<T>::setPort(uint16_t _port) noexcept {
-    if (_port >= enums::neo::eSize::MIN_PORT) { PORT = _port; }
-    else
+    if (_port >= enums::neo::eSize::MIN_PORT) {
+        PORT = _port;
+    }
+    else {
         return enums::neo::eReturn::ERROR;
+    }
     return enums::neo::eReturn::OK;
 }
 typedef Neody<Server> Router;

@@ -22,6 +22,10 @@ namespace enums {
             DEF_REG = 0,
             MIN_PORT = 1000
         };
+        enum eStatus {
+            START = 1,
+            STOP = 0
+        };
     };
 
 } // enums

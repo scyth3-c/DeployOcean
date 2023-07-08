@@ -10,6 +10,7 @@
 #include <atomic>
 #include <condition_variable>
 #include "../HTTP/routes/routes.hpp"
+#include "../utils/enums.h"
 
 using std::string;
 
@@ -18,8 +19,6 @@ namespace workers {
     template <class T>
     class Worker_t {
     private:
-
-        std::atomic<int> MASTER_KEY = 1;
 
         std::vector<listen_routes> &routes;
         std::vector<std::shared_ptr<T>> &core;
@@ -43,7 +42,7 @@ namespace workers {
         inline auto getWorker(std::mutex &macaco, std::mutex &victor, std::mutex &victoria){
 
             return [&]()->void{
-                while(MASTER_KEY){
+                while(enums::neo::eStatus::START){
 
                     {
                         std::unique_lock<std::mutex> lock(macaco);

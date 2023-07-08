@@ -26,7 +26,7 @@ namespace workers {
 
         inline auto getSendProcess(std::mutex &victor){
             return [&]()->void {
-                while(true){
+                while(enums::neo::eStatus::START){
                     {
                         std::unique_lock<std::mutex> lock(victor);
                         condition_response.wait(lock);
